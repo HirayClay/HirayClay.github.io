@@ -113,7 +113,7 @@
   <div id="content-inner">
     
 <article id="post">
-  <div class="post-page-title" style="background-color:#26A69A;background-image:url(/images/random/vateral-10.png)">
+  <div class="post-page-title" style="background-color:#26A69A;background-image:url(/images/random/vateral-16.png)">
   <h2>LinearLayoutManager源码阅读(滚动分析)</h2>
     
   <p>作者:hirayclay &nbsp&nbsp 发布于:<time datetime="2017-12-19T07:45:56.000Z">
@@ -163,7 +163,7 @@
             <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
         <span class="token punctuation">}</span>
         <span class="token keyword">final</span> <span class="token keyword">int</span> scrolled <span class="token operator">=</span> absDy <span class="token operator">></span> consumed <span class="token operator">?</span> layoutDirection <span class="token operator">*</span> consumed <span class="token operator">:</span> dy<span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">//layout view结束，所有View整体平移；这里需要注意的是LLM并非是从头到尾一个个layout view，而是先根据偏移把需要回收的view回收掉，会显示的view显示出来，最后进行整体的平移。想一想这样效率确实要高</span>
+        <span class="token comment" spellcheck="true">//layout view 结束，所有 View 整体平移；这里需要注意的是 LLM 并非是从头到尾一个个 layout view，而是先根据偏移把需要回收的 view 回收掉，会显示的view显示出来，最后进行整体的平移。想一想这样效率确实要高</span>
         mOrientationHelper<span class="token punctuation">.</span><span class="token function">offsetChildren</span><span class="token punctuation">(</span><span class="token operator">-</span>scrolled<span class="token punctuation">)</span><span class="token punctuation">;</span>
         <span class="token keyword">if</span> <span class="token punctuation">(</span>DEBUG<span class="token punctuation">)</span> <span class="token punctuation">{</span>
             Log<span class="token punctuation">.</span><span class="token function">d</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> <span class="token string">"scroll req: "</span> <span class="token operator">+</span> dy <span class="token operator">+</span> <span class="token string">" scrolled: "</span> <span class="token operator">+</span> scrolled<span class="token punctuation">)</span><span class="token punctuation">;</span>
@@ -172,7 +172,7 @@
         <span class="token keyword">return</span> scrolled<span class="token punctuation">;</span>
     <span class="token punctuation">}</span>
 <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>写了部分注释，具体分析一下updateLayoutState方法<br>分析这个方法前，先看下LayoutState这个类，了解一下我们需要关注的几个重要参数的含义</p>
+<p>写了部分注释，具体分析一下 updateLayoutState 方法<br>分析这个方法前，先看下LayoutState这个类，了解一下我们需要关注的几个重要参数的含义</p>
 <p>mRecycle 表示是否需要回收View,滑动情况下这个值是true，但是在有item 添加删除的情况是false，因为锚点什么的得靠view来确定，不能回收</p>
 <p>mOffset   layout View时候的起始坐标(垂直方向的LinearLayoutManager 表示y值)，e.g.比如发生滑动后，下一个item需要显示出来，那么mOffset的值就等于最后一个可见item的bottom值(不考虑margin，向上滑动)</p>
 <p>mAvailable 表示可用距离，在layout View的时候用到</p>
@@ -217,10 +217,10 @@
         mLayoutState<span class="token punctuation">.</span>mScrollingOffset <span class="token operator">=</span> scrollingOffset<span class="token punctuation">;</span>
     <span class="token punctuation">}</span>
 <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>前面几行就是简单的赋值更新状态，然后是根据layoutDirection的方向进行其他参数的计算，我们这里是分析的手指上滑，对应的layoutDireciton是LAYOUT_END，我们进入layoutDirection == LayoutState.LAYOUT_END成立的情况下去看：</p>
-<p> 1.通过getChildClosestToEnd方法拿到RV最接近End的child(如果是水平布局，那么end就是RV的right，垂直布局end就是RV的bottom)</p>
-<p> 2.根据mShouldReverseLayout变量给mItemDirection赋值，我们一般都不使用逆序布局，所以mItemDirection的值是ITEM_DIRECTION_HEAD，也就是说待会在fill方法内部取child来放的时候是正序，也就是从前往后依次取，反之亦然</p>
-<p> 3.根据刚才取到的child获取到其在adapter中的位置，加上mItemDirection后赋值给mCurrentPosition，这个好理解，mCurrentPosition表示的就是取child的开始索引，LayoutState里面有个next方法就是这么做的，可以看下代码</p>
+<p>前面几行就是简单的赋值更新状态，然后是根据 layoutDirection 的方向进行其他参数的计算，我们这里是分析的手指上滑，对应的 layoutDireciton 是 LAYOUT_END ，我们进入layoutDirection == LayoutState.LAYOUT_END 成立的情况下去看：</p>
+<p> 1.通过 getChildClosestToEnd 方法拿到RV最接近 End 的 child (如果是水平布局，那么end就是RV的right，垂直布局end就是RV的bottom)</p>
+<p> 2.根据 mShouldReverseLayout 变量给 mItemDirection 赋值，我们一般都不使用逆序布局，所以 mItemDirection 的值是 ITEM_DIRECTION_HEAD ，也就是说待会在fill方法内部取 child 来放的时候是正序，也就是从前往后依次取，反之亦然</p>
+<p> 3.根据刚才取到的 child 获取到其在 adapter 中的位置，加上mItemDirection后赋值给mCurrentPosition，这个好理解，mCurrentPosition表示的就是取child的开始索引，LayoutState里面有个next方法就是这么做的，可以看下代码</p>
 <pre class="line-numbers language-java"><code class="language-java">        View <span class="token function">next</span><span class="token punctuation">(</span>RecyclerView<span class="token punctuation">.</span>Recycler recycler<span class="token punctuation">)</span> <span class="token punctuation">{</span>
             <span class="token keyword">if</span> <span class="token punctuation">(</span>mScrapList <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
                 <span class="token keyword">return</span> <span class="token function">nextViewFromScrapList</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
@@ -231,8 +231,8 @@
         <span class="token punctuation">}</span>
 <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p> 4.给mOffset赋值，也就是下图最后一个item的bottom值，是后续依次放child的起始坐标<br> <img src="https://github.com/HirayClay/draft/blob/master/RV_LLM.png?raw=true" alt></p>
-<p> 5.至于scrollingOffset就是上面这张图里面最后一个item底部距离RV底部的距离，官方也有注释—-“不需要添加新的children的情况下滚动的最大距离”—–也就是说最后一个item刚好完全滚进来，但是又不会有新的item滚进来的意思</p>
-<p> 6最后给mAvailable赋值为requiredSpace，也就是此次滚动的距离,然后判断canUseExistingSpace为true就减去刚才的scrollingOffset；这里为什么要减去这个scrollingOffset呢<br>  ，其实就是把这个零头减掉方便计算而已，最后一句mScrollingOffset又把scrollingOffse<br>  t保存起来了。最后所有child都放置好之后，返回消耗的滑动距离时候，在scrollBy方法那里<br>  最后又把这个值加上去了，就这句：</p>
+<p> 5.至于scrollingOffset就是上面这张图里面最后一个 item 底部距离 RV底部的距离，官方也有注释—-“不需要添加新的 children 的情况下滚动的最大距离”—–也就是说最后一个 item 刚好完全滚进来，但是又不会有新的 item 滚进来的意思</p>
+<p> 6最后给 mAvailable 赋值为 requiredSpace，也就是此次滚动的距离,然后判断canUseExistingSpace 为 true 就减去刚才的 scrollingOffset；这里为什么要减去这个scrollingOffset呢，其实就是把这个零头减掉方便计算而已。这里可以详细解释一下为什么方便计算，比如 滑动的距离不够把最底部的一个 item 滑进来，那么是不是根本不涉及到 添加新 view ,也不用回收 view，这样就是高效的。具体表现在代码里就是 mAvailable 是负值， fill 方法 里面的 那个 for 循环根本不会执行。所以最后一句 mScrollingOffset 又把 scrollingOffset 保存起来了。最后所有 child 都放置好之后，返回消耗的滑动距离时候，在scrollBy方法那里<br>  最后又把这个值加上去了，就这句：</p>
 <pre class="line-numbers language-java"><code class="language-java">     <span class="token keyword">final</span> <span class="token keyword">int</span> consumed <span class="token operator">=</span> mLayoutState<span class="token punctuation">.</span>mScrollingOffset
                 <span class="token operator">+</span> <span class="token function">fill</span><span class="token punctuation">(</span>recycler<span class="token punctuation">,</span> mLayoutState<span class="token punctuation">,</span> state<span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
@@ -292,7 +292,7 @@
         <span class="token punctuation">}</span>
     <span class="token punctuation">}</span>
 <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>看代码的第一句，如果dt&lt;0就直接返回结束了，这也解释了为什么前面的纠结为什么当mAvailable &lt; 0时候让mScrollingOffset加上mAvailable,就是为了让这里传入的dt是正值，也就是实际发生的滑动距离。由于不考虑逆序布局，直接看第二个for循环，其实这个循环要表达的意思是从头到尾遍历所有View直到找到一个滑动之后底部还没出界的View，那么在这个View之前的View全部要被回收掉。所谓回收掉就是把View节点从ViewHierarchy上删除掉了，但是被缓存起来了供重新绑定和重用。</p>
+<p>看代码的第一句，如果 dt&lt;0 就直接返回结束了，这也解释了为什么前面的纠结为什么当mAvailable &lt; 0时候让 mScrollingOffset 加上 mAvailable,就是为了让这里传入的dt是正值，也就是实际发生的滑动距离。由于不考虑逆序布局，直接看第二个 for循环，其实这个循环要表达的意思是从头到尾遍历所有View直到找到一个滑动之后底部还没出界的View，那么在这个View之前的View全部要被回收掉。所谓回收掉就是把View节点从ViewHierarchy上删除掉了，但是被缓存起来了供重新绑定和重用。</p>
 <p>继续往fill方法下面看，进入while循环</p>
 <pre class="line-numbers language-java"><code class="language-java">      <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>layoutState<span class="token punctuation">.</span>mInfinite <span class="token operator">||</span> remainingSpace <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> layoutState<span class="token punctuation">.</span><span class="token function">hasMore</span><span class="token punctuation">(</span>state<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
             layoutChunkResult<span class="token punctuation">.</span><span class="token function">resetInternal</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
@@ -341,7 +341,8 @@
         <span class="token punctuation">}</span>
 <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
 <p> 意思很简单，就是Item被删除了或者变化了，就忽略消耗，也就是不计入消耗。最开始我也觉得奇怪，后来知道动画之后明白这么做是有意义的，虽然这个Item被删除了，但是你不能立马就给不显示了还是添加进来，毕竟还有动画在这个Item要执行，所以就得等到这个Item的动画完了才删除。那么不计入消耗的好处就是，会多layout一个Item出来，就是在底部，屏幕外面，虽然不可见，如图：<br> <img src="https://github.com/HirayClay/draft/blob/master/rv_removed.png?raw=true" alt><br> item 2已经被移除了，并且item5会被加进来，但是在屏幕外我们看不到，等到item2动画结束item5就会滑进来。当然这个if判断在滑动情况下是不会进来的。</p>
-<p> 最后，所有的view添加完之后，其实view并没有在正确的位置，所以整体又进行平移，至此整个滑动流程都结束</p>
+<p> 最后，所有的view添加完之后，其实 view 并没有在正确的位置，所以整体又进行平移，至此整个滑动流程都结束。</p>
+<p> 上面只是滑动的流程。实际上比较复杂的还是 出现 item 增删的时候，多次布局，并且配合 动画的时候。所以 RecyclerView 的架构设计真的很厉害，把很多东西组合在一起，还很优雅。</p>
 <p>the end</p>
 
   </div>
