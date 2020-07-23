@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="ContentProvider,四大组件,底层原理,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="涉及的类 android.app.ContextImpl     public ContentResolver getContentResolver() android.app.ContextImpl.ApplicationContentResolver     protected IContentProvider acquireProvider(Context context, String a">
+<meta name="keywords" content="ContentProvider,四大组件,底层原理">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ContentProvider 调用过程">
+<meta property="og:url" content="http://HirayClay.github.io/2020/07/23/ContentProvider-调用过程/index.html">
+<meta property="og:site_name" content="Blog">
+<meta property="og:description" content="涉及的类 android.app.ContextImpl     public ContentResolver getContentResolver() android.app.ContextImpl.ApplicationContentResolver     protected IContentProvider acquireProvider(Context context, String a">
+<meta property="og:locale" content="zh">
+<meta property="og:updated_time" content="2020-07-23T06:17:38.422Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="ContentProvider 调用过程">
+<meta name="twitter:description" content="涉及的类 android.app.ContextImpl     public ContentResolver getContentResolver() android.app.ContextImpl.ApplicationContentResolver     protected IContentProvider acquireProvider(Context context, String a">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://HirayClay.github.io/2020/07/23/ContentProvider-调用过程/">
+
+
+
+
+
+  <title>ContentProvider 调用过程 | Blog</title>
+  
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/css/prism.css" type="text/css">
+<link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">hirayclay's blog</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://HirayClay.github.io/2020/07/23/ContentProvider-调用过程/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="hirayclay">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">ContentProvider 调用过程</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2020-07-23T17:32:59+08:00">
+                2020-07-23
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h4 id="涉及的类"><a href="#涉及的类" class="headerlink" title="涉及的类"></a>涉及的类</h4><pre>
+android.app.ContextImpl
+    public ContentResolver getContentResolver()
+android.app.ContextImpl.ApplicationContentResolver
+    protected IContentProvider acquireProvider(Context context, String auth)   
+
+</pre>
+
+
+<h4 id="一般我们这么使用-contentProvider"><a href="#一般我们这么使用-contentProvider" class="headerlink" title="一般我们这么使用 contentProvider"></a>一般我们这么使用 contentProvider</h4><pre class="line-numbers language-java"><code class="language-java">
+ <span class="token function">getContentResolver</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">insert</span><span class="token punctuation">(</span>Uri<span class="token punctuation">.</span><span class="token function">parse</span><span class="token punctuation">(</span><span class="token string">"http://wwww.baidu.com/q/"</span><span class="token punctuation">)</span><span class="token punctuation">,</span>null<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>getConentProvider 方法是 Context 的，Context 实现类是 ContextImpl</p>
+<p>ContextImpl 中方法返回的是一个 成员变量：</p>
+<pre class="line-numbers language-java"><code class="language-java">
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> ContentResolver <span class="token function">getContentResolver</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> mContentResolver<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这个成员变量是一个 ApplicationContentResolver 对象，赋值是在 ContextImpl 的 构造函数中传参赋值：</p>
+<pre class="line-numbers language-java"><code class="language-java">
+ <span class="token keyword">private</span> <span class="token function">ContextImpl</span><span class="token punctuation">(</span><span class="token annotation punctuation">@Nullable</span> ContextImpl container<span class="token punctuation">,</span> <span class="token annotation punctuation">@NonNull</span> ActivityThread mainThread<span class="token punctuation">,</span>
+            <span class="token annotation punctuation">@NonNull</span> LoadedApk packageInfo<span class="token punctuation">,</span> <span class="token annotation punctuation">@Nullable</span> String splitName<span class="token punctuation">,</span>
+            <span class="token annotation punctuation">@Nullable</span> IBinder activityToken<span class="token punctuation">,</span> <span class="token annotation punctuation">@Nullable</span> UserHandle user<span class="token punctuation">,</span> <span class="token keyword">int</span> flags<span class="token punctuation">,</span>
+            <span class="token annotation punctuation">@Nullable</span> ClassLoader classLoader<span class="token punctuation">,</span> <span class="token annotation punctuation">@Nullable</span> String overrideOpPackageName<span class="token punctuation">)</span><span class="token punctuation">{</span>
+        <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+        mContentResolver <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ApplicationContentResolver</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> mainThread<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+
+<span class="token punctuation">}</span>
+
+
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这里 ContextImpl 的初始化和 Activity 的启动相关，可以看 Activity 启动流程相关的内容</p>
+<p>这里ContentProvider 的实现已经清晰，继续进入 insert() 方法的调用</p>
+<pre class="line-numbers language-java"><code class="language-java">
+IContentProvider provider <span class="token operator">=</span> <span class="token function">acquireProvider</span><span class="token punctuation">(</span>url<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>进入 ApplicationContentResolver 的  acquireProvider 方法</p>
+<pre class="line-numbers language-java"><code class="language-java">    <span class="token annotation punctuation">@Override</span>
+        <span class="token annotation punctuation">@UnsupportedAppUsage</span>
+        <span class="token keyword">protected</span> IContentProvider <span class="token function">acquireProvider</span><span class="token punctuation">(</span>Context context<span class="token punctuation">,</span> String auth<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> mMainThread<span class="token punctuation">.</span><span class="token function">acquireProvider</span><span class="token punctuation">(</span>context<span class="token punctuation">,</span>
+                    ContentProvider<span class="token punctuation">.</span><span class="token function">getAuthorityWithoutUserId</span><span class="token punctuation">(</span>auth<span class="token punctuation">)</span><span class="token punctuation">,</span>
+                    <span class="token function">resolveUserIdFromAuthority</span><span class="token punctuation">(</span>auth<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>又是调用了 ActivityThread 的同名方法：</p>
+<pre class="line-numbers language-java"><code class="language-java">
+ <span class="token annotation punctuation">@UnsupportedAppUsage</span>
+    <span class="token keyword">public</span> <span class="token keyword">final</span> IContentProvider <span class="token function">acquireProvider</span><span class="token punctuation">(</span>
+            Context c<span class="token punctuation">,</span> String auth<span class="token punctuation">,</span> <span class="token keyword">int</span> userId<span class="token punctuation">,</span> <span class="token keyword">boolean</span> stable<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+
+        <span class="token comment" spellcheck="true">/**
+        这里是 首先查看是否已经有缓存的 cp
+        */</span>        
+        <span class="token keyword">final</span> IContentProvider provider <span class="token operator">=</span> <span class="token function">acquireExistingProvider</span><span class="token punctuation">(</span>c<span class="token punctuation">,</span> auth<span class="token punctuation">,</span> userId<span class="token punctuation">,</span> stable<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>provider <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> provider<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+
+
+        ContentProviderHolder holder <span class="token operator">=</span> null<span class="token punctuation">;</span>
+        <span class="token keyword">try</span> <span class="token punctuation">{</span>
+
+            <span class="token comment" spellcheck="true">//远程调用</span>
+            <span class="token keyword">synchronized</span> <span class="token punctuation">(</span><span class="token function">getGetProviderLock</span><span class="token punctuation">(</span>auth<span class="token punctuation">,</span> userId<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                holder <span class="token operator">=</span> ActivityManager<span class="token punctuation">.</span><span class="token function">getService</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getContentProvider</span><span class="token punctuation">(</span>
+                        <span class="token function">getApplicationThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> c<span class="token punctuation">.</span><span class="token function">getOpPackageName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> auth<span class="token punctuation">,</span> userId<span class="token punctuation">,</span> stable<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">RemoteException</span> ex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">throw</span> ex<span class="token punctuation">.</span><span class="token function">rethrowFromSystemServer</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>holder <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            Slog<span class="token punctuation">.</span><span class="token function">e</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> <span class="token string">"Failed to find provider info for "</span> <span class="token operator">+</span> auth<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span> null<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+
+        <span class="token comment" spellcheck="true">// Install provider will increment the reference count for us, and break</span>
+        <span class="token comment" spellcheck="true">// any ties in the race.</span>
+        holder <span class="token operator">=</span> <span class="token function">installProvider</span><span class="token punctuation">(</span>c<span class="token punctuation">,</span> holder<span class="token punctuation">,</span> holder<span class="token punctuation">.</span>info<span class="token punctuation">,</span>
+                <span class="token boolean">true</span> <span class="token comment" spellcheck="true">/*noisy*/</span><span class="token punctuation">,</span> holder<span class="token punctuation">.</span>noReleaseNeeded<span class="token punctuation">,</span> stable<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> holder<span class="token punctuation">.</span>provider<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>发起远程调用 拿到一个 ContentProviderHolder </p>
+<pre class="line-numbers language-java"><code class="language-java">  holder <span class="token operator">=</span> ActivityManager<span class="token punctuation">.</span><span class="token function">getService</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getContentProvider</span><span class="token punctuation">(</span>
+                        <span class="token function">getApplicationThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> c<span class="token punctuation">.</span><span class="token function">getOpPackageName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> auth<span class="token punctuation">,</span> userId<span class="token punctuation">,</span> stable<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+
+```java 
+
+Android  api <span class="token number">26</span> 以后已经弃用了 ActivityManagerNative（就是手写了实现了一遍 aidl ） ，可以直接看 IActivityManager<span class="token punctuation">.</span>aidl 中的定义
+
+
+然后进入 ActivityManagerService  
+
+```java 
+
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">ActivityManagerService</span> <span class="token keyword">extends</span> <span class="token class-name">IActivityManager<span class="token punctuation">.</span>Stub</span>  <span class="token keyword">implements</span> <span class="token class-name">Watchdog<span class="token punctuation">.</span>Monitor</span><span class="token punctuation">,</span> BatteryStatsImpl<span class="token punctuation">.</span>BatteryCallback
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>getContentProvider 方法最后调用了 getContentProviderImpl 方法</p>
+<pre class="line-numbers language-java"><code class="language-java">
+    <span class="token keyword">private</span> ContentProviderHolder <span class="token function">getContentProviderImpl</span><span class="token punctuation">(</span>IApplicationThread caller<span class="token punctuation">,</span>
+            String name<span class="token punctuation">,</span> IBinder token<span class="token punctuation">,</span> <span class="token keyword">int</span> callingUid<span class="token punctuation">,</span> String callingPackage<span class="token punctuation">,</span> String callingTag<span class="token punctuation">,</span>
+            <span class="token keyword">boolean</span> stable<span class="token punctuation">,</span> <span class="token keyword">int</span> userId<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        ContentProviderRecord cpr<span class="token punctuation">;</span>
+        ContentProviderConnection conn <span class="token operator">=</span> null<span class="token punctuation">;</span>
+        ProviderInfo cpi <span class="token operator">=</span> null<span class="token punctuation">;</span>
+        <span class="token keyword">boolean</span> providerRunning <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">synchronized</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">long</span> startTime <span class="token operator">=</span> SystemClock<span class="token punctuation">.</span><span class="token function">uptimeMillis</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+            ProcessRecord r <span class="token operator">=</span> null<span class="token punctuation">;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>caller <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+
+                <span class="token comment" spellcheck="true">//首先拿到调用者的进程记录</span>
+                r <span class="token operator">=</span> <span class="token function">getRecordForAppLocked</span><span class="token punctuation">(</span>caller<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>r <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">SecurityException</span><span class="token punctuation">(</span>
+                            <span class="token string">"Unable to find app for caller "</span> <span class="token operator">+</span> caller
+                          <span class="token operator">+</span> <span class="token string">" (pid="</span> <span class="token operator">+</span> Binder<span class="token punctuation">.</span><span class="token function">getCallingPid</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                          <span class="token operator">+</span> <span class="token string">") when getting content provider "</span> <span class="token operator">+</span> name<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+            <span class="token punctuation">}</span>
+
+            <span class="token keyword">boolean</span> checkCrossUser <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+
+            <span class="token function">checkTime</span><span class="token punctuation">(</span>startTime<span class="token punctuation">,</span> <span class="token string">"getContentProviderImpl: getProviderByName"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+            <span class="token comment" spellcheck="true">// First check if this content provider has been published...</span>
+            cpr <span class="token operator">=</span> mProviderMap<span class="token punctuation">.</span><span class="token function">getProviderByName</span><span class="token punctuation">(</span>name<span class="token punctuation">,</span> userId<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+
+
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>providerRunning<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                cpi <span class="token operator">=</span> cpr<span class="token punctuation">.</span>info<span class="token punctuation">;</span>
+                String msg<span class="token punctuation">;</span>
+
+                <span class="token comment" spellcheck="true">//检查 provider的属性，配置了 multiprocess = true 会直接实例化一个实例运行在调用者的进程，也就是说并不会启动 contentProvider</span>
+                <span class="token comment" spellcheck="true">//所在的进程。后续直接返回到 </span>
+
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>r <span class="token operator">!=</span> null <span class="token operator">&amp;&amp;</span> cpr<span class="token punctuation">.</span><span class="token function">canRunHere</span><span class="token punctuation">(</span>r<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>msg <span class="token operator">=</span> <span class="token function">checkContentProviderAssociation</span><span class="token punctuation">(</span>r<span class="token punctuation">,</span> callingUid<span class="token punctuation">,</span> cpi<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                        <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">SecurityException</span><span class="token punctuation">(</span><span class="token string">"Content provider lookup "</span>
+                                <span class="token operator">+</span> cpr<span class="token punctuation">.</span>name<span class="token punctuation">.</span><span class="token function">flattenToShortString</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                                <span class="token operator">+</span> <span class="token string">" failed: association not allowed with package "</span> <span class="token operator">+</span> msg<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span>
+
+                    ContentProviderHolder holder <span class="token operator">=</span> cpr<span class="token punctuation">.</span><span class="token function">newHolder</span><span class="token punctuation">(</span>null<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+                    holder<span class="token punctuation">.</span>provider <span class="token operator">=</span> null<span class="token punctuation">;</span>
+                    <span class="token keyword">return</span> holder<span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+
+                <span class="token comment" spellcheck="true">// Don't expose providers between normal apps and instant apps</span>
+                <span class="token keyword">try</span> <span class="token punctuation">{</span>
+                    <span class="token keyword">if</span> <span class="token punctuation">(</span>AppGlobals<span class="token punctuation">.</span><span class="token function">getPackageManager</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                            <span class="token punctuation">.</span><span class="token function">resolveContentProvider</span><span class="token punctuation">(</span>name<span class="token punctuation">,</span> <span class="token number">0</span> <span class="token comment" spellcheck="true">/*flags*/</span><span class="token punctuation">,</span> userId<span class="token punctuation">)</span> <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                        <span class="token keyword">return</span> null<span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span>
+                <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">RemoteException</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token punctuation">}</span>
+
+                <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>msg <span class="token operator">=</span> <span class="token function">checkContentProviderAssociation</span><span class="token punctuation">(</span>r<span class="token punctuation">,</span> callingUid<span class="token punctuation">,</span> cpi<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">SecurityException</span><span class="token punctuation">(</span><span class="token string">"Content provider lookup "</span>
+                            <span class="token operator">+</span> cpr<span class="token punctuation">.</span>name<span class="token punctuation">.</span><span class="token function">flattenToShortString</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                            <span class="token operator">+</span> <span class="token string">" failed: association not allowed with package "</span> <span class="token operator">+</span> msg<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+                <span class="token function">checkTime</span><span class="token punctuation">(</span>startTime<span class="token punctuation">,</span>
+                        <span class="token string">"getContentProviderImpl: before checkContentProviderPermission"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>msg <span class="token operator">=</span> <span class="token function">checkContentProviderPermissionLocked</span><span class="token punctuation">(</span>cpi<span class="token punctuation">,</span> r<span class="token punctuation">,</span> userId<span class="token punctuation">,</span> checkCrossUser<span class="token punctuation">)</span><span class="token punctuation">)</span>
+                        <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">SecurityException</span><span class="token punctuation">(</span>msg<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+                <span class="token function">checkTime</span><span class="token punctuation">(</span>startTime<span class="token punctuation">,</span>
+                        <span class="token string">"getContentProviderImpl: after checkContentProviderPermission"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+                <span class="token keyword">final</span> <span class="token keyword">long</span> origId <span class="token operator">=</span> Binder<span class="token punctuation">.</span><span class="token function">clearCallingIdentity</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+                <span class="token function">checkTime</span><span class="token punctuation">(</span>startTime<span class="token punctuation">,</span> <span class="token string">"getContentProviderImpl: incProviderCountLocked"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+                <span class="token comment" spellcheck="true">// In this case the provider instance already exists, so we can</span>
+                <span class="token comment" spellcheck="true">// return it right away.</span>
+                conn <span class="token operator">=</span> <span class="token function">incProviderCountLocked</span><span class="token punctuation">(</span>r<span class="token punctuation">,</span> cpr<span class="token punctuation">,</span> token<span class="token punctuation">,</span> callingUid<span class="token punctuation">,</span> callingPackage<span class="token punctuation">,</span> callingTag<span class="token punctuation">,</span>
+                        stable<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>conn <span class="token operator">!=</span> null <span class="token operator">&amp;&amp;</span> <span class="token punctuation">(</span>conn<span class="token punctuation">.</span>stableCount<span class="token operator">+</span>conn<span class="token punctuation">.</span>unstableCount<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    <span class="token keyword">if</span> <span class="token punctuation">(</span>cpr<span class="token punctuation">.</span>proc <span class="token operator">!=</span> null <span class="token operator">&amp;&amp;</span> r<span class="token punctuation">.</span>setAdj <span class="token operator">&lt;=</span> ProcessList<span class="token punctuation">.</span>PERCEPTIBLE_LOW_APP_ADJ<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                        <span class="token comment" spellcheck="true">// If this is a perceptible app accessing the provider,</span>
+                        <span class="token comment" spellcheck="true">// make sure to count it as being accessed and thus</span>
+                        <span class="token comment" spellcheck="true">// back up on the LRU list.  This is good because</span>
+                        <span class="token comment" spellcheck="true">// content providers are often expensive to start.</span>
+                        <span class="token function">checkTime</span><span class="token punctuation">(</span>startTime<span class="token punctuation">,</span> <span class="token string">"getContentProviderImpl: before updateLruProcess"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                        mProcessList<span class="token punctuation">.</span><span class="token function">updateLruProcessLocked</span><span class="token punctuation">(</span>cpr<span class="token punctuation">.</span>proc<span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">,</span> null<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                        <span class="token function">checkTime</span><span class="token punctuation">(</span>startTime<span class="token punctuation">,</span> <span class="token string">"getContentProviderImpl: after updateLruProcess"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span>
+                <span class="token punctuation">}</span>
+
+                <span class="token function">checkTime</span><span class="token punctuation">(</span>startTime<span class="token punctuation">,</span> <span class="token string">"getContentProviderImpl: before updateOomAdj"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+
+            <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>providerRunning<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token keyword">try</span> <span class="token punctuation">{</span>
+                    <span class="token function">checkTime</span><span class="token punctuation">(</span>startTime<span class="token punctuation">,</span> <span class="token string">"getContentProviderImpl: before resolveContentProvider"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    cpi <span class="token operator">=</span> AppGlobals<span class="token punctuation">.</span><span class="token function">getPackageManager</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>
+                        <span class="token function">resolveContentProvider</span><span class="token punctuation">(</span>name<span class="token punctuation">,</span>
+                            STOCK_PM_FLAGS <span class="token operator">|</span> PackageManager<span class="token punctuation">.</span>GET_URI_PERMISSION_PATTERNS<span class="token punctuation">,</span> userId<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token function">checkTime</span><span class="token punctuation">(</span>startTime<span class="token punctuation">,</span> <span class="token string">"getContentProviderImpl: after resolveContentProvider"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">RemoteException</span> ex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token punctuation">}</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>cpi <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    <span class="token keyword">return</span> null<span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+
+                <span class="token keyword">final</span> <span class="token keyword">boolean</span> firstClass <span class="token operator">=</span> cpr <span class="token operator">==</span> null<span class="token punctuation">;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>firstClass<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    <span class="token keyword">final</span> <span class="token keyword">long</span> ident <span class="token operator">=</span> Binder<span class="token punctuation">.</span><span class="token function">clearCallingIdentity</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+                    <span class="token comment" spellcheck="true">// If permissions need a review before any of the app components can run,</span>
+                    <span class="token comment" spellcheck="true">// we return no provider and launch a review activity if the calling app</span>
+                    <span class="token comment" spellcheck="true">// is in the foreground.</span>
+                    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">requestTargetProviderPermissionsReviewIfNeededLocked</span><span class="token punctuation">(</span>cpi<span class="token punctuation">,</span> r<span class="token punctuation">,</span> userId<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                        <span class="token keyword">return</span> null<span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span>
+
+                    <span class="token keyword">try</span> <span class="token punctuation">{</span>
+                        <span class="token function">checkTime</span><span class="token punctuation">(</span>startTime<span class="token punctuation">,</span> <span class="token string">"getContentProviderImpl: before getApplicationInfo"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                        ApplicationInfo ai <span class="token operator">=</span>
+                            AppGlobals<span class="token punctuation">.</span><span class="token function">getPackageManager</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>
+                                <span class="token function">getApplicationInfo</span><span class="token punctuation">(</span>
+                                        cpi<span class="token punctuation">.</span>applicationInfo<span class="token punctuation">.</span>packageName<span class="token punctuation">,</span>
+                                        STOCK_PM_FLAGS<span class="token punctuation">,</span> userId<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                        <span class="token function">checkTime</span><span class="token punctuation">(</span>startTime<span class="token punctuation">,</span> <span class="token string">"getContentProviderImpl: after getApplicationInfo"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                        <span class="token keyword">if</span> <span class="token punctuation">(</span>ai <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                            Slog<span class="token punctuation">.</span><span class="token function">w</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> <span class="token string">"No package info for content provider "</span>
+                                    <span class="token operator">+</span> cpi<span class="token punctuation">.</span>name<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                            <span class="token keyword">return</span> null<span class="token punctuation">;</span>
+                        <span class="token punctuation">}</span>
+                        ai <span class="token operator">=</span> <span class="token function">getAppInfoForUser</span><span class="token punctuation">(</span>ai<span class="token punctuation">,</span> userId<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                        cpr <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ContentProviderRecord</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> cpi<span class="token punctuation">,</span> ai<span class="token punctuation">,</span> comp<span class="token punctuation">,</span> singleton<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">RemoteException</span> ex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                        <span class="token comment" spellcheck="true">// pm is in same process, this will never happen.</span>
+                    <span class="token punctuation">}</span> <span class="token keyword">finally</span> <span class="token punctuation">{</span>
+                        Binder<span class="token punctuation">.</span><span class="token function">restoreCallingIdentity</span><span class="token punctuation">(</span>ident<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span>
+                <span class="token punctuation">}</span>
+
+                <span class="token function">checkTime</span><span class="token punctuation">(</span>startTime<span class="token punctuation">,</span> <span class="token string">"getContentProviderImpl: now have ContentProviderRecord"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>r <span class="token operator">!=</span> null <span class="token operator">&amp;&amp;</span> cpr<span class="token punctuation">.</span><span class="token function">canRunHere</span><span class="token punctuation">(</span>r<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    <span class="token comment" spellcheck="true">// If this is a multiprocess provider, then just return its</span>
+                    <span class="token comment" spellcheck="true">// info and allow the caller to instantiate it.  Only do</span>
+                    <span class="token comment" spellcheck="true">// this if the provider is the same user as the caller's</span>
+                    <span class="token comment" spellcheck="true">// process, or can run as root (so can be in any process).</span>
+                    <span class="token keyword">return</span> cpr<span class="token punctuation">.</span><span class="token function">newHolder</span><span class="token punctuation">(</span>null<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>DEBUG_PROVIDER<span class="token punctuation">)</span> Slog<span class="token punctuation">.</span><span class="token function">w</span><span class="token punctuation">(</span>TAG_PROVIDER<span class="token punctuation">,</span> <span class="token string">"LAUNCHING REMOTE PROVIDER (myuid "</span>
+                            <span class="token operator">+</span> <span class="token punctuation">(</span>r <span class="token operator">!=</span> null <span class="token operator">?</span> r<span class="token punctuation">.</span>uid <span class="token operator">:</span> null<span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">" pruid "</span> <span class="token operator">+</span> cpr<span class="token punctuation">.</span>appInfo<span class="token punctuation">.</span>uid <span class="token operator">+</span> <span class="token string">"): "</span>
+                            <span class="token operator">+</span> cpr<span class="token punctuation">.</span>info<span class="token punctuation">.</span>name <span class="token operator">+</span> <span class="token string">" callers="</span> <span class="token operator">+</span> Debug<span class="token punctuation">.</span><span class="token function">getCallers</span><span class="token punctuation">(</span><span class="token number">6</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+                <span class="token comment" spellcheck="true">// This is single process, and our app is now connecting to it.</span>
+                <span class="token comment" spellcheck="true">// See if we are already in the process of launching this</span>
+                <span class="token comment" spellcheck="true">// provider.</span>
+                <span class="token keyword">final</span> <span class="token keyword">int</span> N <span class="token operator">=</span> mLaunchingProviders<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">int</span> i<span class="token punctuation">;</span>
+                <span class="token keyword">for</span> <span class="token punctuation">(</span>i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> N<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    <span class="token keyword">if</span> <span class="token punctuation">(</span>mLaunchingProviders<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>i<span class="token punctuation">)</span> <span class="token operator">==</span> cpr<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                        <span class="token keyword">break</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span>
+                <span class="token punctuation">}</span>
+
+                <span class="token comment" spellcheck="true">// If the provider is not already being launched, then get it</span>
+                <span class="token comment" spellcheck="true">// started.</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>i <span class="token operator">>=</span> N<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    <span class="token keyword">final</span> <span class="token keyword">long</span> origId <span class="token operator">=</span> Binder<span class="token punctuation">.</span><span class="token function">clearCallingIdentity</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+                    <span class="token keyword">try</span> <span class="token punctuation">{</span>
+                        <span class="token comment" spellcheck="true">// Content provider is now in use, its package can't be stopped.</span>
+                        <span class="token keyword">try</span> <span class="token punctuation">{</span>
+                            <span class="token function">checkTime</span><span class="token punctuation">(</span>startTime<span class="token punctuation">,</span> <span class="token string">"getContentProviderImpl: before set stopped state"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                            AppGlobals<span class="token punctuation">.</span><span class="token function">getPackageManager</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setPackageStoppedState</span><span class="token punctuation">(</span>
+                                    cpr<span class="token punctuation">.</span>appInfo<span class="token punctuation">.</span>packageName<span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">,</span> userId<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                            <span class="token function">checkTime</span><span class="token punctuation">(</span>startTime<span class="token punctuation">,</span> <span class="token string">"getContentProviderImpl: after set stopped state"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                        <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">RemoteException</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                        <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">IllegalArgumentException</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                            Slog<span class="token punctuation">.</span><span class="token function">w</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> <span class="token string">"Failed trying to unstop package "</span>
+                                    <span class="token operator">+</span> cpr<span class="token punctuation">.</span>appInfo<span class="token punctuation">.</span>packageName <span class="token operator">+</span> <span class="token string">": "</span> <span class="token operator">+</span> e<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                        <span class="token punctuation">}</span>
+
+                        <span class="token comment" spellcheck="true">// Use existing process if already started</span>
+                        <span class="token function">checkTime</span><span class="token punctuation">(</span>startTime<span class="token punctuation">,</span> <span class="token string">"getContentProviderImpl: looking for process record"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                        ProcessRecord proc <span class="token operator">=</span> <span class="token function">getProcessRecordLocked</span><span class="token punctuation">(</span>
+                                cpi<span class="token punctuation">.</span>processName<span class="token punctuation">,</span> cpr<span class="token punctuation">.</span>appInfo<span class="token punctuation">.</span>uid<span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                        <span class="token keyword">if</span> <span class="token punctuation">(</span>proc <span class="token operator">!=</span> null <span class="token operator">&amp;&amp;</span> proc<span class="token punctuation">.</span>thread <span class="token operator">!=</span> null <span class="token operator">&amp;&amp;</span> <span class="token operator">!</span>proc<span class="token punctuation">.</span>killed<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                            <span class="token keyword">if</span> <span class="token punctuation">(</span>DEBUG_PROVIDER<span class="token punctuation">)</span> Slog<span class="token punctuation">.</span><span class="token function">d</span><span class="token punctuation">(</span>TAG_PROVIDER<span class="token punctuation">,</span>
+                                    <span class="token string">"Installing in existing process "</span> <span class="token operator">+</span> proc<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                            <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>proc<span class="token punctuation">.</span>pubProviders<span class="token punctuation">.</span><span class="token function">containsKey</span><span class="token punctuation">(</span>cpi<span class="token punctuation">.</span>name<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                                <span class="token function">checkTime</span><span class="token punctuation">(</span>startTime<span class="token punctuation">,</span> <span class="token string">"getContentProviderImpl: scheduling install"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                                proc<span class="token punctuation">.</span>pubProviders<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>cpi<span class="token punctuation">.</span>name<span class="token punctuation">,</span> cpr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                                <span class="token keyword">try</span> <span class="token punctuation">{</span>
+
+
+                                        <span class="token comment" spellcheck="true">//这里让 目标进程初始话 ContentProvider，这里进入 到ActivityThread 的 scheduleInstallProvider 方</span>
+                                        <span class="token comment" spellcheck="true">//法，provider 初始化以后，回调 publishContentproviders</span>
+
+                                    proc<span class="token punctuation">.</span>thread<span class="token punctuation">.</span><span class="token function">scheduleInstallProvider</span><span class="token punctuation">(</span>cpi<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                                <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">RemoteException</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                                <span class="token punctuation">}</span>
+                            <span class="token punctuation">}</span>
+                        <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+                            <span class="token function">checkTime</span><span class="token punctuation">(</span>startTime<span class="token punctuation">,</span> <span class="token string">"getContentProviderImpl: before start process"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                            proc <span class="token operator">=</span> <span class="token function">startProcessLocked</span><span class="token punctuation">(</span>cpi<span class="token punctuation">.</span>processName<span class="token punctuation">,</span>
+                                    cpr<span class="token punctuation">.</span>appInfo<span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span>
+                                    <span class="token keyword">new</span> <span class="token class-name">HostingRecord</span><span class="token punctuation">(</span><span class="token string">"content provider"</span><span class="token punctuation">,</span>
+                                    <span class="token keyword">new</span> <span class="token class-name">ComponentName</span><span class="token punctuation">(</span>cpi<span class="token punctuation">.</span>applicationInfo<span class="token punctuation">.</span>packageName<span class="token punctuation">,</span>
+                                            cpi<span class="token punctuation">.</span>name<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                            <span class="token function">checkTime</span><span class="token punctuation">(</span>startTime<span class="token punctuation">,</span> <span class="token string">"getContentProviderImpl: after start process"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                            <span class="token keyword">if</span> <span class="token punctuation">(</span>proc <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                                Slog<span class="token punctuation">.</span><span class="token function">w</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> <span class="token string">"Unable to launch app "</span>
+                                        <span class="token operator">+</span> cpi<span class="token punctuation">.</span>applicationInfo<span class="token punctuation">.</span>packageName <span class="token operator">+</span> <span class="token string">"/"</span>
+                                        <span class="token operator">+</span> cpi<span class="token punctuation">.</span>applicationInfo<span class="token punctuation">.</span>uid <span class="token operator">+</span> <span class="token string">" for provider "</span>
+                                        <span class="token operator">+</span> name <span class="token operator">+</span> <span class="token string">": process is bad"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                                <span class="token keyword">return</span> null<span class="token punctuation">;</span>
+                            <span class="token punctuation">}</span>
+                        <span class="token punctuation">}</span>
+                        cpr<span class="token punctuation">.</span>launchingApp <span class="token operator">=</span> proc<span class="token punctuation">;</span>
+                        mLaunchingProviders<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>cpr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span> <span class="token keyword">finally</span> <span class="token punctuation">{</span>
+                        Binder<span class="token punctuation">.</span><span class="token function">restoreCallingIdentity</span><span class="token punctuation">(</span>origId<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span>
+                <span class="token punctuation">}</span>
+
+                <span class="token function">checkTime</span><span class="token punctuation">(</span>startTime<span class="token punctuation">,</span> <span class="token string">"getContentProviderImpl: updating data structures"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+                <span class="token comment" spellcheck="true">// Make sure the provider is published (the same provider class</span>
+                <span class="token comment" spellcheck="true">// may be published under multiple names).</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>firstClass<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    mProviderMap<span class="token punctuation">.</span><span class="token function">putProviderByClass</span><span class="token punctuation">(</span>comp<span class="token punctuation">,</span> cpr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+
+                mProviderMap<span class="token punctuation">.</span><span class="token function">putProviderByName</span><span class="token punctuation">(</span>name<span class="token punctuation">,</span> cpr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                conn <span class="token operator">=</span> <span class="token function">incProviderCountLocked</span><span class="token punctuation">(</span>r<span class="token punctuation">,</span> cpr<span class="token punctuation">,</span> token<span class="token punctuation">,</span> callingUid<span class="token punctuation">,</span> callingPackage<span class="token punctuation">,</span> callingTag<span class="token punctuation">,</span>
+                        stable<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>conn <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    conn<span class="token punctuation">.</span>waiting <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+            <span class="token punctuation">}</span>
+            <span class="token function">checkTime</span><span class="token punctuation">(</span>startTime<span class="token punctuation">,</span> <span class="token string">"getContentProviderImpl: done!"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+            <span class="token function">grantEphemeralAccessLocked</span><span class="token punctuation">(</span>userId<span class="token punctuation">,</span> null <span class="token comment" spellcheck="true">/*intent*/</span><span class="token punctuation">,</span>
+                    UserHandle<span class="token punctuation">.</span><span class="token function">getAppId</span><span class="token punctuation">(</span>cpi<span class="token punctuation">.</span>applicationInfo<span class="token punctuation">.</span>uid<span class="token punctuation">)</span><span class="token punctuation">,</span>
+                    UserHandle<span class="token punctuation">.</span><span class="token function">getAppId</span><span class="token punctuation">(</span>Binder<span class="token punctuation">.</span><span class="token function">getCallingUid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+
+
+<span class="token comment" spellcheck="true">//等待 ContentProvider 发布</span>
+        <span class="token comment" spellcheck="true">// Wait for the provider to be published...</span>
+        <span class="token keyword">final</span> <span class="token keyword">long</span> timeout <span class="token operator">=</span> SystemClock<span class="token punctuation">.</span><span class="token function">uptimeMillis</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> CONTENT_PROVIDER_WAIT_TIMEOUT<span class="token punctuation">;</span>
+        <span class="token keyword">boolean</span> timedOut <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+        <span class="token keyword">synchronized</span> <span class="token punctuation">(</span>cpr<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">while</span> <span class="token punctuation">(</span>cpr<span class="token punctuation">.</span>provider <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>cpr<span class="token punctuation">.</span>launchingApp <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    Slog<span class="token punctuation">.</span><span class="token function">w</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> <span class="token string">"Unable to launch app "</span>
+                            <span class="token operator">+</span> cpi<span class="token punctuation">.</span>applicationInfo<span class="token punctuation">.</span>packageName <span class="token operator">+</span> <span class="token string">"/"</span>
+                            <span class="token operator">+</span> cpi<span class="token punctuation">.</span>applicationInfo<span class="token punctuation">.</span>uid <span class="token operator">+</span> <span class="token string">" for provider "</span>
+                            <span class="token operator">+</span> name <span class="token operator">+</span> <span class="token string">": launching app became null"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    EventLog<span class="token punctuation">.</span><span class="token function">writeEvent</span><span class="token punctuation">(</span>EventLogTags<span class="token punctuation">.</span>AM_PROVIDER_LOST_PROCESS<span class="token punctuation">,</span>
+                            UserHandle<span class="token punctuation">.</span><span class="token function">getUserId</span><span class="token punctuation">(</span>cpi<span class="token punctuation">.</span>applicationInfo<span class="token punctuation">.</span>uid<span class="token punctuation">)</span><span class="token punctuation">,</span>
+                            cpi<span class="token punctuation">.</span>applicationInfo<span class="token punctuation">.</span>packageName<span class="token punctuation">,</span>
+                            cpi<span class="token punctuation">.</span>applicationInfo<span class="token punctuation">.</span>uid<span class="token punctuation">,</span> name<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token keyword">return</span> null<span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+                <span class="token keyword">try</span> <span class="token punctuation">{</span>
+                    <span class="token keyword">final</span> <span class="token keyword">long</span> wait <span class="token operator">=</span> Math<span class="token punctuation">.</span><span class="token function">max</span><span class="token punctuation">(</span>0L<span class="token punctuation">,</span> timeout <span class="token operator">-</span> SystemClock<span class="token punctuation">.</span><span class="token function">uptimeMillis</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token keyword">if</span> <span class="token punctuation">(</span>DEBUG_MU<span class="token punctuation">)</span> Slog<span class="token punctuation">.</span><span class="token function">v</span><span class="token punctuation">(</span>TAG_MU<span class="token punctuation">,</span>
+                            <span class="token string">"Waiting to start provider "</span> <span class="token operator">+</span> cpr
+                            <span class="token operator">+</span> <span class="token string">" launchingApp="</span> <span class="token operator">+</span> cpr<span class="token punctuation">.</span>launchingApp <span class="token operator">+</span> <span class="token string">" for "</span> <span class="token operator">+</span> wait <span class="token operator">+</span> <span class="token string">" ms"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token keyword">if</span> <span class="token punctuation">(</span>conn <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                        conn<span class="token punctuation">.</span>waiting <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span>
+                    cpr<span class="token punctuation">.</span><span class="token function">wait</span><span class="token punctuation">(</span>wait<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token keyword">if</span> <span class="token punctuation">(</span>cpr<span class="token punctuation">.</span>provider <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                        timedOut <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+                        <span class="token keyword">break</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span>
+                <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">InterruptedException</span> ex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token punctuation">}</span> <span class="token keyword">finally</span> <span class="token punctuation">{</span>
+                    <span class="token keyword">if</span> <span class="token punctuation">(</span>conn <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                        conn<span class="token punctuation">.</span>waiting <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span>
+                <span class="token punctuation">}</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>timedOut<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token comment" spellcheck="true">// Note we do it afer releasing the lock.</span>
+            String callerName <span class="token operator">=</span> <span class="token string">"unknown"</span><span class="token punctuation">;</span>
+            <span class="token keyword">synchronized</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token keyword">final</span> ProcessRecord record <span class="token operator">=</span> mProcessList<span class="token punctuation">.</span><span class="token function">getLRURecordForAppLocked</span><span class="token punctuation">(</span>caller<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>record <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    callerName <span class="token operator">=</span> record<span class="token punctuation">.</span>processName<span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+            <span class="token punctuation">}</span>
+
+            Slog<span class="token punctuation">.</span><span class="token function">wtf</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> <span class="token string">"Timeout waiting for provider "</span>
+                    <span class="token operator">+</span> cpi<span class="token punctuation">.</span>applicationInfo<span class="token punctuation">.</span>packageName <span class="token operator">+</span> <span class="token string">"/"</span>
+                    <span class="token operator">+</span> cpi<span class="token punctuation">.</span>applicationInfo<span class="token punctuation">.</span>uid <span class="token operator">+</span> <span class="token string">" for provider "</span>
+                    <span class="token operator">+</span> name
+                    <span class="token operator">+</span> <span class="token string">" providerRunning="</span> <span class="token operator">+</span> providerRunning
+                    <span class="token operator">+</span> <span class="token string">" caller="</span> <span class="token operator">+</span> callerName <span class="token operator">+</span> <span class="token string">"/"</span> <span class="token operator">+</span> Binder<span class="token punctuation">.</span><span class="token function">getCallingUid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span> null<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+
+        <span class="token keyword">return</span> cpr<span class="token punctuation">.</span><span class="token function">newHolder</span><span class="token punctuation">(</span>conn<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p> 注意两个方法<br> canRunHere 这个方法用于检查 provider 的配置属性，一般我们可能会这么配置provider</p>
+<pre class="line-numbers language-xml"><code class="language-xml">
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>provider</span>
+            <span class="token attr-name"><span class="token namespace">android:</span>name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>com.hiray.androidlottie.TestContentProvider<span class="token punctuation">"</span></span>
+            <span class="token attr-name"><span class="token namespace">android:</span>authorities</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>com.hiray.androidlottie<span class="token punctuation">"</span></span>
+            <span class="token attr-name"><span class="token namespace">android:</span>exported</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>true<span class="token punctuation">"</span></span>
+            <span class="token attr-name"><span class="token namespace">android:</span>multiprocess</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>true<span class="token punctuation">"</span></span>
+            <span class="token attr-name"><span class="token namespace">android:</span>process</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>:testprovider<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span>
+
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p> 配置了 multiprocess 属性值等于 true ，那么就符合 canRunHere 的条件，直接在调用者的进程 初始化 provider ，这里 newHolder 方法的 conn 参数 是null,因为不需要后续通过 conn 来进行加减计数</p>
+<p> 后续注意 scheduleInstallProvider 方法，这里会回到客户端，看ActivityThread 的 同名方法， 利用 Handler 发送了一个 what = INSTALL_PROVIDER 的消息，来到 handleInstallProvider 方法 </p>
+<pre class="line-numbers language-java"><code class="language-java">
+   <span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">installContentProviders</span><span class="token punctuation">(</span>
+            Context context<span class="token punctuation">,</span> List<span class="token operator">&lt;</span>ProviderInfo<span class="token operator">></span> providers<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">final</span> ArrayList<span class="token operator">&lt;</span>ContentProviderHolder<span class="token operator">></span> results <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">for</span> <span class="token punctuation">(</span>ProviderInfo cpi <span class="token operator">:</span> providers<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>DEBUG_PROVIDER<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                StringBuilder buf <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">StringBuilder</span><span class="token punctuation">(</span><span class="token number">128</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                buf<span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span><span class="token string">"Pub "</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                buf<span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span>cpi<span class="token punctuation">.</span>authority<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                buf<span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span><span class="token string">": "</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                buf<span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span>cpi<span class="token punctuation">.</span>name<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                Log<span class="token punctuation">.</span><span class="token function">i</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> buf<span class="token punctuation">.</span><span class="token function">toString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+            ContentProviderHolder cph <span class="token operator">=</span> <span class="token function">installProvider</span><span class="token punctuation">(</span>context<span class="token punctuation">,</span> null<span class="token punctuation">,</span> cpi<span class="token punctuation">,</span>
+                    <span class="token boolean">false</span> <span class="token comment" spellcheck="true">/*noisy*/</span><span class="token punctuation">,</span> <span class="token boolean">true</span> <span class="token comment" spellcheck="true">/*noReleaseNeeded*/</span><span class="token punctuation">,</span> <span class="token boolean">true</span> <span class="token comment" spellcheck="true">/*stable*/</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>cph <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                cph<span class="token punctuation">.</span>noReleaseNeeded <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+                results<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>cph<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+
+        <span class="token keyword">try</span> <span class="token punctuation">{</span>
+            ActivityManager<span class="token punctuation">.</span><span class="token function">getService</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">publishContentProviders</span><span class="token punctuation">(</span>
+                <span class="token function">getApplicationThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> results<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">RemoteException</span> ex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">throw</span> ex<span class="token punctuation">.</span><span class="token function">rethrowFromSystemServer</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p> 这里是安装好 ContentProvider 后，调用了服务端的 publishContentProviders 方法，使得服务端的 getContentProviderImpl 方法不再阻塞，也就是我们的 调用端的 insert 方法 不被阻塞 ，即 getContentResolver().insert(Uri.parse(“<a href="http://wwww.baidu.com/q/&quot;),null)" target="_blank" rel="noopener">http://wwww.baidu.com/q/&quot;),null)</a>; 这句代码执行</p>
+<p> 继续看 installContentProviders 方法里面调用的 installProvider 方法 </p>
+<pre class="line-numbers language-java"><code class="language-java">
+    <span class="token keyword">private</span> ContentProviderHolder <span class="token function">installProvider</span><span class="token punctuation">(</span>Context context<span class="token punctuation">,</span>
+            ContentProviderHolder holder<span class="token punctuation">,</span> ProviderInfo info<span class="token punctuation">,</span>
+            <span class="token keyword">boolean</span> noisy<span class="token punctuation">,</span> <span class="token keyword">boolean</span> noReleaseNeeded<span class="token punctuation">,</span> <span class="token keyword">boolean</span> stable<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        ContentProvider localProvider <span class="token operator">=</span> null<span class="token punctuation">;</span>
+        IContentProvider provider<span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>holder <span class="token operator">==</span> null <span class="token operator">||</span> holder<span class="token punctuation">.</span>provider <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>DEBUG_PROVIDER <span class="token operator">||</span> noisy<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                Slog<span class="token punctuation">.</span><span class="token function">d</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> <span class="token string">"Loading provider "</span> <span class="token operator">+</span> info<span class="token punctuation">.</span>authority <span class="token operator">+</span> <span class="token string">": "</span>
+                        <span class="token operator">+</span> info<span class="token punctuation">.</span>name<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+            Context c <span class="token operator">=</span> null<span class="token punctuation">;</span>
+            ApplicationInfo ai <span class="token operator">=</span> info<span class="token punctuation">.</span>applicationInfo<span class="token punctuation">;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>context<span class="token punctuation">.</span><span class="token function">getPackageName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span>ai<span class="token punctuation">.</span>packageName<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                c <span class="token operator">=</span> context<span class="token punctuation">;</span>
+            <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>mInitialApplication <span class="token operator">!=</span> null <span class="token operator">&amp;&amp;</span>
+                    mInitialApplication<span class="token punctuation">.</span><span class="token function">getPackageName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span>ai<span class="token punctuation">.</span>packageName<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                c <span class="token operator">=</span> mInitialApplication<span class="token punctuation">;</span>
+            <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+                <span class="token keyword">try</span> <span class="token punctuation">{</span>
+                    c <span class="token operator">=</span> context<span class="token punctuation">.</span><span class="token function">createPackageContext</span><span class="token punctuation">(</span>ai<span class="token punctuation">.</span>packageName<span class="token punctuation">,</span>
+                            Context<span class="token punctuation">.</span>CONTEXT_INCLUDE_CODE<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">PackageManager<span class="token punctuation">.</span>NameNotFoundException</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    <span class="token comment" spellcheck="true">// Ignore</span>
+                <span class="token punctuation">}</span>
+            <span class="token punctuation">}</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>c <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                Slog<span class="token punctuation">.</span><span class="token function">w</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> <span class="token string">"Unable to get context for package "</span> <span class="token operator">+</span>
+                      ai<span class="token punctuation">.</span>packageName <span class="token operator">+</span>
+                      <span class="token string">" while loading content provider "</span> <span class="token operator">+</span>
+                      info<span class="token punctuation">.</span>name<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">return</span> null<span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>info<span class="token punctuation">.</span>splitName <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token keyword">try</span> <span class="token punctuation">{</span>
+                    c <span class="token operator">=</span> c<span class="token punctuation">.</span><span class="token function">createContextForSplit</span><span class="token punctuation">(</span>info<span class="token punctuation">.</span>splitName<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">NameNotFoundException</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">RuntimeException</span><span class="token punctuation">(</span>e<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+            <span class="token punctuation">}</span>
+
+            <span class="token keyword">try</span> <span class="token punctuation">{</span>
+                <span class="token keyword">final</span> java<span class="token punctuation">.</span>lang<span class="token punctuation">.</span>ClassLoader cl <span class="token operator">=</span> c<span class="token punctuation">.</span><span class="token function">getClassLoader</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                LoadedApk packageInfo <span class="token operator">=</span> <span class="token function">peekPackageInfo</span><span class="token punctuation">(</span>ai<span class="token punctuation">.</span>packageName<span class="token punctuation">,</span> <span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>packageInfo <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    <span class="token comment" spellcheck="true">// System startup case.</span>
+                    packageInfo <span class="token operator">=</span> <span class="token function">getSystemContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>mPackageInfo<span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+                localProvider <span class="token operator">=</span> packageInfo<span class="token punctuation">.</span><span class="token function">getAppFactory</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                        <span class="token punctuation">.</span><span class="token function">instantiateProvider</span><span class="token punctuation">(</span>cl<span class="token punctuation">,</span> info<span class="token punctuation">.</span>name<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                provider <span class="token operator">=</span> localProvider<span class="token punctuation">.</span><span class="token function">getIContentProvider</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>provider <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    Slog<span class="token punctuation">.</span><span class="token function">e</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> <span class="token string">"Failed to instantiate class "</span> <span class="token operator">+</span>
+                          info<span class="token punctuation">.</span>name <span class="token operator">+</span> <span class="token string">" from sourceDir "</span> <span class="token operator">+</span>
+                          info<span class="token punctuation">.</span>applicationInfo<span class="token punctuation">.</span>sourceDir<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token keyword">return</span> null<span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>DEBUG_PROVIDER<span class="token punctuation">)</span> Slog<span class="token punctuation">.</span><span class="token function">v</span><span class="token punctuation">(</span>
+                    TAG<span class="token punctuation">,</span> <span class="token string">"Instantiating local provider "</span> <span class="token operator">+</span> info<span class="token punctuation">.</span>name<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token comment" spellcheck="true">// XXX Need to create the correct context for this provider.</span>
+                localProvider<span class="token punctuation">.</span><span class="token function">attachInfo</span><span class="token punctuation">(</span>c<span class="token punctuation">,</span> info<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">java<span class="token punctuation">.</span>lang<span class="token punctuation">.</span>Exception</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>mInstrumentation<span class="token punctuation">.</span><span class="token function">onException</span><span class="token punctuation">(</span>null<span class="token punctuation">,</span> e<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">RuntimeException</span><span class="token punctuation">(</span>
+                            <span class="token string">"Unable to get provider "</span> <span class="token operator">+</span> info<span class="token punctuation">.</span>name
+                            <span class="token operator">+</span> <span class="token string">": "</span> <span class="token operator">+</span> e<span class="token punctuation">.</span><span class="token function">toString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> e<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+                <span class="token keyword">return</span> null<span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+            provider <span class="token operator">=</span> holder<span class="token punctuation">.</span>provider<span class="token punctuation">;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>DEBUG_PROVIDER<span class="token punctuation">)</span> Slog<span class="token punctuation">.</span><span class="token function">v</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> <span class="token string">"Installing external provider "</span> <span class="token operator">+</span> info<span class="token punctuation">.</span>authority <span class="token operator">+</span> <span class="token string">": "</span>
+                    <span class="token operator">+</span> info<span class="token punctuation">.</span>name<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+
+        ContentProviderHolder retHolder<span class="token punctuation">;</span>
+
+        <span class="token keyword">synchronized</span> <span class="token punctuation">(</span>mProviderMap<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>DEBUG_PROVIDER<span class="token punctuation">)</span> Slog<span class="token punctuation">.</span><span class="token function">v</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> <span class="token string">"Checking to add "</span> <span class="token operator">+</span> provider
+                    <span class="token operator">+</span> <span class="token string">" / "</span> <span class="token operator">+</span> info<span class="token punctuation">.</span>name<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            IBinder jBinder <span class="token operator">=</span> provider<span class="token punctuation">.</span><span class="token function">asBinder</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>localProvider <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                ComponentName cname <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ComponentName</span><span class="token punctuation">(</span>info<span class="token punctuation">.</span>packageName<span class="token punctuation">,</span> info<span class="token punctuation">.</span>name<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                ProviderClientRecord pr <span class="token operator">=</span> mLocalProvidersByName<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>cname<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>pr <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    <span class="token keyword">if</span> <span class="token punctuation">(</span>DEBUG_PROVIDER<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                        Slog<span class="token punctuation">.</span><span class="token function">v</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> <span class="token string">"installProvider: lost the race, "</span>
+                                <span class="token operator">+</span> <span class="token string">"using existing local provider"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span>
+                    provider <span class="token operator">=</span> pr<span class="token punctuation">.</span>mProvider<span class="token punctuation">;</span>
+                <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+                    holder <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ContentProviderHolder</span><span class="token punctuation">(</span>info<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    holder<span class="token punctuation">.</span>provider <span class="token operator">=</span> provider<span class="token punctuation">;</span>
+                    holder<span class="token punctuation">.</span>noReleaseNeeded <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+                    pr <span class="token operator">=</span> <span class="token function">installProviderAuthoritiesLocked</span><span class="token punctuation">(</span>provider<span class="token punctuation">,</span> localProvider<span class="token punctuation">,</span> holder<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    mLocalProviders<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>jBinder<span class="token punctuation">,</span> pr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    mLocalProvidersByName<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>cname<span class="token punctuation">,</span> pr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+                retHolder <span class="token operator">=</span> pr<span class="token punctuation">.</span>mHolder<span class="token punctuation">;</span>
+            <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+                ProviderRefCount prc <span class="token operator">=</span> mProviderRefCountMap<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>jBinder<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>prc <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    <span class="token keyword">if</span> <span class="token punctuation">(</span>DEBUG_PROVIDER<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                        Slog<span class="token punctuation">.</span><span class="token function">v</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> <span class="token string">"installProvider: lost the race, updating ref count"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span>
+
+                    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>noReleaseNeeded<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                        <span class="token function">incProviderRefLocked</span><span class="token punctuation">(</span>prc<span class="token punctuation">,</span> stable<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                        <span class="token keyword">try</span> <span class="token punctuation">{</span>
+                            ActivityManager<span class="token punctuation">.</span><span class="token function">getService</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">removeContentProvider</span><span class="token punctuation">(</span>
+                                    holder<span class="token punctuation">.</span>connection<span class="token punctuation">,</span> stable<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                        <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">RemoteException</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                            <span class="token comment" spellcheck="true">//do nothing content provider object is dead any way</span>
+                        <span class="token punctuation">}</span>
+                    <span class="token punctuation">}</span>
+                <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+                    ProviderClientRecord client <span class="token operator">=</span> <span class="token function">installProviderAuthoritiesLocked</span><span class="token punctuation">(</span>
+                            provider<span class="token punctuation">,</span> localProvider<span class="token punctuation">,</span> holder<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token keyword">if</span> <span class="token punctuation">(</span>noReleaseNeeded<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                        prc <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ProviderRefCount</span><span class="token punctuation">(</span>holder<span class="token punctuation">,</span> client<span class="token punctuation">,</span> <span class="token number">1000</span><span class="token punctuation">,</span> <span class="token number">1000</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+                        prc <span class="token operator">=</span> stable
+                                <span class="token operator">?</span> <span class="token keyword">new</span> <span class="token class-name">ProviderRefCount</span><span class="token punctuation">(</span>holder<span class="token punctuation">,</span> client<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span>
+                                <span class="token operator">:</span> <span class="token keyword">new</span> <span class="token class-name">ProviderRefCount</span><span class="token punctuation">(</span>holder<span class="token punctuation">,</span> client<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span>
+                    mProviderRefCountMap<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>jBinder<span class="token punctuation">,</span> prc<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+                retHolder <span class="token operator">=</span> prc<span class="token punctuation">.</span>holder<span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">return</span> retHolder<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p> 方法内部反射初始化了 ContentProvider ，调用 attachInfo 方法 ，给 provider 传入 context 上下文，并调用 ContentProvider 的onCreate 方法。</p>
+<p> 目前为止，我们可以知道，整个调用过程初始化了很多东西，客户端服务端来回调用，才能初始化一个ContentProvider ，所以 provider 的初始化是一件非常耗时的过程。</p>
+<p>客户端创建完成后，继续回到 AMS 的 getContentProviderImpl 方法的后半段。此时 客户端的 provider 已经安装完成，调用了服务端的 publishContentProviders . 这时候关注一下  getContentProviderImpl 最后等待 provider 安装完成阻塞的代码 </p>
+<pre class="line-numbers language-java"><code class="language-java"> <span class="token keyword">synchronized</span> <span class="token punctuation">(</span>cpr<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">while</span> <span class="token punctuation">(</span>cpr<span class="token punctuation">.</span>provider <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>cpr<span class="token punctuation">.</span>launchingApp <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    Slog<span class="token punctuation">.</span><span class="token function">w</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> <span class="token string">"Unable to launch app "</span>
+                            <span class="token operator">+</span> cpi<span class="token punctuation">.</span>applicationInfo<span class="token punctuation">.</span>packageName <span class="token operator">+</span> <span class="token string">"/"</span>
+                            <span class="token operator">+</span> cpi<span class="token punctuation">.</span>applicationInfo<span class="token punctuation">.</span>uid <span class="token operator">+</span> <span class="token string">" for provider "</span>
+                            <span class="token operator">+</span> name <span class="token operator">+</span> <span class="token string">": launching app became null"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    EventLog<span class="token punctuation">.</span><span class="token function">writeEvent</span><span class="token punctuation">(</span>EventLogTags<span class="token punctuation">.</span>AM_PROVIDER_LOST_PROCESS<span class="token punctuation">,</span>
+                            UserHandle<span class="token punctuation">.</span><span class="token function">getUserId</span><span class="token punctuation">(</span>cpi<span class="token punctuation">.</span>applicationInfo<span class="token punctuation">.</span>uid<span class="token punctuation">)</span><span class="token punctuation">,</span>
+                            cpi<span class="token punctuation">.</span>applicationInfo<span class="token punctuation">.</span>packageName<span class="token punctuation">,</span>
+                            cpi<span class="token punctuation">.</span>applicationInfo<span class="token punctuation">.</span>uid<span class="token punctuation">,</span> name<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token keyword">return</span> null<span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+                <span class="token keyword">try</span> <span class="token punctuation">{</span>
+                    <span class="token keyword">if</span> <span class="token punctuation">(</span>DEBUG_MU<span class="token punctuation">)</span> Slog<span class="token punctuation">.</span><span class="token function">v</span><span class="token punctuation">(</span>TAG_MU<span class="token punctuation">,</span>
+                            <span class="token string">"Waiting to start provider "</span> <span class="token operator">+</span> cpr
+                            <span class="token operator">+</span> <span class="token string">" launchingApp="</span> <span class="token operator">+</span> cpr<span class="token punctuation">.</span>launchingApp<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token keyword">if</span> <span class="token punctuation">(</span>conn <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                        conn<span class="token punctuation">.</span>waiting <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span>
+                    cpr<span class="token punctuation">.</span><span class="token function">wait</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">InterruptedException</span> ex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token punctuation">}</span> <span class="token keyword">finally</span> <span class="token punctuation">{</span>
+                    <span class="token keyword">if</span> <span class="token punctuation">(</span>conn <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                        conn<span class="token punctuation">.</span>waiting <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span>
+                <span class="token punctuation">}</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>publishContentProviders 方法 部分代码</p>
+<pre class="line-numbers language-java"><code class="language-java">
+
+<span class="token comment" spellcheck="true">//取出 cpr ，并且给 provider 赋值,并且唤醒线程。并且做了缓存</span>
+
+ ContentProviderRecord dst <span class="token operator">=</span> r<span class="token punctuation">.</span>pubProviders<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>src<span class="token punctuation">.</span>info<span class="token punctuation">.</span>name<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>DEBUG_MU<span class="token punctuation">)</span> Slog<span class="token punctuation">.</span><span class="token function">v</span><span class="token punctuation">(</span>TAG_MU<span class="token punctuation">,</span> <span class="token string">"ContentProviderRecord uid = "</span> <span class="token operator">+</span> dst<span class="token punctuation">.</span>uid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>dst <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    ComponentName comp <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ComponentName</span><span class="token punctuation">(</span>dst<span class="token punctuation">.</span>info<span class="token punctuation">.</span>packageName<span class="token punctuation">,</span> dst<span class="token punctuation">.</span>info<span class="token punctuation">.</span>name<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    mProviderMap<span class="token punctuation">.</span><span class="token function">putProviderByClass</span><span class="token punctuation">(</span>comp<span class="token punctuation">,</span> dst<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    String names<span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token operator">=</span> dst<span class="token punctuation">.</span>info<span class="token punctuation">.</span>authority<span class="token punctuation">.</span><span class="token function">split</span><span class="token punctuation">(</span><span class="token string">";"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> j <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> j <span class="token operator">&lt;</span> names<span class="token punctuation">.</span>length<span class="token punctuation">;</span> j<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+
+                        <span class="token comment" spellcheck="true">//缓存起来，后续 如果在此请求 此provider ，可以直接返回</span>
+                        mProviderMap<span class="token punctuation">.</span><span class="token function">putProviderByName</span><span class="token punctuation">(</span>names<span class="token punctuation">[</span>j<span class="token punctuation">]</span><span class="token punctuation">,</span> dst<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span>
+
+                    <span class="token keyword">int</span> launchingCount <span class="token operator">=</span> mLaunchingProviders<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token keyword">int</span> j<span class="token punctuation">;</span>
+                    <span class="token keyword">boolean</span> wasInLaunchingProviders <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+                    <span class="token keyword">for</span> <span class="token punctuation">(</span>j <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> j <span class="token operator">&lt;</span> launchingCount<span class="token punctuation">;</span> j<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                        <span class="token keyword">if</span> <span class="token punctuation">(</span>mLaunchingProviders<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>j<span class="token punctuation">)</span> <span class="token operator">==</span> dst<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                            mLaunchingProviders<span class="token punctuation">.</span><span class="token function">remove</span><span class="token punctuation">(</span>j<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                            wasInLaunchingProviders <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+                            j<span class="token operator">--</span><span class="token punctuation">;</span>
+                            launchingCount<span class="token operator">--</span><span class="token punctuation">;</span>
+                        <span class="token punctuation">}</span>
+                    <span class="token punctuation">}</span>
+                    <span class="token keyword">if</span> <span class="token punctuation">(</span>wasInLaunchingProviders<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                        mHandler<span class="token punctuation">.</span><span class="token function">removeMessages</span><span class="token punctuation">(</span>CONTENT_PROVIDER_PUBLISH_TIMEOUT_MSG<span class="token punctuation">,</span> r<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span>
+                    <span class="token keyword">synchronized</span> <span class="token punctuation">(</span>dst<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                        dst<span class="token punctuation">.</span>provider <span class="token operator">=</span> src<span class="token punctuation">.</span>provider<span class="token punctuation">;</span>
+                        dst<span class="token punctuation">.</span>proc <span class="token operator">=</span> r<span class="token punctuation">;</span>
+                        dst<span class="token punctuation">.</span><span class="token function">notifyAll</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>由此整个 ContentProvider 的初始化流程结束。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/ContentProvider/" rel="tag"># ContentProvider</a>
+          
+            <a href="/tags/四大组件/" rel="tag"># 四大组件</a>
+          
+            <a href="/tags/底层原理/" rel="tag"># 底层原理</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/08/28/ViewDragHelper在遇到到clickable-true时-无法拖动View的问题解决过程/" rel="next" title="ViewDragHelper在遇到到clickable=true时 无法拖动View的问题解决过程">
+                <i class="fa fa-chevron-left"></i> ViewDragHelper在遇到到clickable=true时 无法拖动View的问题解决过程
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">hirayclay</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">16</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                
+                  <span class="site-state-item-count">29</span>
+                  <span class="site-state-item-name">tags</span>
+                
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#涉及的类"><span class="nav-number">1.</span> <span class="nav-text">涉及的类</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#一般我们这么使用-contentProvider"><span class="nav-number">2.</span> <span class="nav-text">一般我们这么使用 contentProvider</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">hirayclay</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
